@@ -1,0 +1,202 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.css"/>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.js"></script>
+    <script type = "text/javascript">
+        $(document).ready(function () {
+            var post = {};
+            var dynamicURL = "";
+            var methodName = "";
+
+            getAllPosts();
+            getAllCategories();
+
+            $('#btnSearch').click(function (e) {
+                e.preventDefault();
+                var keyword = $('#search').val();
+                searchByTitle(keyword);
+            });
+
+            $('#btnAction').click(function () {
+                post.title = $('#title').val();
+                post.content = $('#content').val();
+                post.category = $('#category').val();
+                post.creationDate = $('#creationDate').val();
+                var id = $('#id').val();
+                if(id){
+                    //update it
+                    dynamicURL = "http://localhost:8080/api/posts/update/"+id;
+                    methodName = "PUT";
+                }else{
+                    //save it
+                    dynamicURL = "http://localhost:8080/api/posts/add";
+                    methodName = "POST";
+                }
+                var postObj = JSON.stringify(post);
+                $.ajax({
+                    url: dynamicURL,
+                    method: methodName,
+                    data: postObj,
+                    contentType: 'application/json; charset=utf-8',
+                    success: function () {
+                        alert('Saved successfully');
+                        getAllPosts();
+                        reset();
+                    },
+                    error: function (error) {
+                        alert(error);
+                    }
+                })
+            })
+        })
+
+        function getAllPosts() {
+            $.ajax({
+                url: "http://localhost:8080/api/posts",
+                method: "GET",
+                dataType: "json",
+
+                success: function (data) {
+                    var tableBody = $('#tblPost tbody');
+                    tableBody.empty();
+                    $(data).each(function (index, element) {
+                        tableBody.append('<tr><td>'+element.creationDate+'</td><td>'+element.title+'</td><td>'+element.content+'</td><td>'+element.category+'</td><td><button onclick = "updatePost('+element.id+')">Update</button> | <button onclick = "deletePost('+element.id+')">Delete</button></td></tr>');
+                    })
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            })
+        }
+
+        function deletePost(id){
+            $.ajax({
+                url: 'http://localhost:8080/api/posts/delete/'+id,
+                method: 'DELETE',
+                success: function () {
+                    alert('The post has been deleted');
+                    getAllPosts();
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            })
+        }
+
+        function updatePost(id){
+
+            $.ajax({
+                url: 'http://localhost:8080/api/posts/detail/'+id,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $('#title').val(data.title);
+                    $('#content').val(data.content);
+                    $('#category').val(data.category);
+                    $('#creationDate').val(data.creationDate);
+                    $('#id').val(data.id);
+                    getAllPosts();
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            })
+        }
+
+        function reset(){
+            $('#title').val('');
+            $('#content').val('');
+            $('#category').val('');
+            $('#creationDate').val('');
+            $('#id').val('');
+        }
+        function searchByTitle(keyword) {
+            $.ajax({
+                url: 'http://localhost:8080/api/posts/search/' + keyword,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var tableBody = $('#tblPost tbody');
+                    tableBody.empty();
+
+                    if (data.length === 0) {
+                        getAllPosts();
+                    } else {
+                        $(data).each(function (index, element) {
+                            tableBody.append('<tr><td>' + element.creationDate + '</td><td>' + element.title + '</td><td>' + element.content + '</td><td>' + element.category + '</td><td><button onclick="updatePost(' + element.id + ')">Update</button> | <button onclick="deletePost(' + element.id + ')">Delete</button></td></tr>');
+                        });
+                    }
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            });
+        }
+        function getAllCategories() {
+            $.ajax({
+                url: "http://localhost:8080/api/categories",
+                method: "GET",
+                dataType: "json",
+                success: function (data) {
+                    var selectElement = $('#category');
+                    $.each(data, function (index, category) {
+                        selectElement.append('<option value="' + category.id + '">' + category.name + '</option>');
+                    });
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            });
+        }
+
+    </script>
+</head>
+<body>
+<div>
+    <table>
+
+        <td><input type="text" id = "id" hidden></td>
+
+        <tr>
+            <td>Title</td>
+            <td><input type="text" id = "title"></td>
+        </tr>
+        <tr>
+            <td>Content</td>
+            <td><input type="text" id = "content"></td>
+        </tr>
+        <tr>
+            <td>Category</td>
+            <td>
+                <select id="category" name="category">
+                    <option value="">Select category</option>
+                </select>
+            </td>
+        </tr>
+        <tr colspan = "2">
+            <td><input type="button" value="ADD or EDIT" id="btnAction"></td>
+        </tr>
+    </table>
+    <form action="" method="post" >
+        <input type="text" id="search" />
+        <button id="btnSearch" type="submit">Search</button>
+    </form>
+    <table border = "1" id = "tblPost">
+        <thead>
+        <tr>
+            <th>Creation Date</th>
+            <th>Title</th>
+            <th>Content</th>
+            <th>Category</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</div>
+<button id="btnLoad">Load more</button>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.css"/>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.js"></script>
+    <script type = "text/javascript">
+        $(document).ready(function () {
+            var category = {};
+            var dynamicURL = "";
+            var methodName = "";
+            getAllCategories();
+            $('#btnAction').click(function () {
+                category.name = $('#name').val();
+                var id = $('#id').val();
+                if(id){
+                    //update it
+                    dynamicURL = "http://localhost:8080/api/categories/update/"+id;
+                    methodName = "PUT";
+                }else{
+                    //save it
+                    dynamicURL = "http://localhost:8080/api/categories/add";
+                    methodName = "POST";
+                }
+                var catObj = JSON.stringify(category);
+                $.ajax({
+                    url: dynamicURL,
+                    method: methodName,
+                    data: catObj,
+                    contentType: 'application/json; charset=utf-8',
+                    success: function () {
+                        alert('Saved successfully');
+                        getAllCategories();
+                        reset();
+                    },
+                    error: function (error) {
+                        alert(error);
+                    }
+                })
+            })
+        })
+
+        function getAllCategories() {
+            $.ajax({
+                url: "http://localhost:8080/api/categories",
+                method: "GET",
+                dataType: "json",
+
+                success: function (data) {
+                    var tableBody = $('#tblCat tbody');
+                    tableBody.empty();
+                    $(data).each(function (index, element) {
+                        tableBody.append('<tr><td>'+element.name+'</td><td><button onclick = "updateCat('+element.id+')">Update</button> | <button onclick = "deleteCat('+element.id+')">Delete</button></td></tr>');
+                    })
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            })
+        }
+
+        function deleteCat(id){
+            $.ajax({
+                url: 'http://localhost:8080/api/categories/delete/'+id,
+                method: 'DELETE',
+                success: function () {
+                    alert('The category has been deleted');
+                    getAllCategories();
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            })
+        }
+
+        function updateCat(id){
+
+            $.ajax({
+                url: 'http://localhost:8080/api/categories/detail/'+id,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $('#name').val(data.name);
+                    $('#id').val(data.id);
+                    getAllCategories();
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            })
+        }
+
+        function reset(){
+            $('#name').val('');
+            $('#id').val('');
+        }
+
+    </script>
+</head>
+<body>
+<div>
+    <table>
+
+        <td><input type="text" id = "id" hidden></td>
+
+        <tr>
+            <td>Name</td>
+            <td><input type="text" id = "name"></td>
+        </tr>
+        <tr colspan = "2">
+            <td><input type="button" value="ADD or EDIT" id="btnAction"></td>
+        </tr>
+    </table>
+    <table border = "1" id = "tblCat">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
